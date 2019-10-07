@@ -146,10 +146,10 @@ yesno() {
 }
 
 # The command used to update the system package manager repos
-: ${PKG_MGR_UPDATE="apt update -qy"}
+: ${PKG_MGR_UPDATE="apt-get update -qy"}
 # The command used to install a package - where the package name would be
 # specified as the first argument following the command.
-: ${PKG_MGR_INSTALL="apt install -y"}
+: ${PKG_MGR_INSTALL="apt-get install -y"}
 
 PKG_MGR_UPDATED="n"
 pkg_not_found() {

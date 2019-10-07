@@ -82,14 +82,14 @@ if ! has_binary git; then
 fi
 
 echo "${GREEN} -> Cloning Privex/shell-core into '$clonedir'${RESET}"
-git clone https://github.com/Privex/shell-core.git "$clonedir"
+git clone -q https://github.com/Privex/shell-core.git "$clonedir"
 echo "${GREEN} -> Using 'run.sh install' to install/update Privex ShellCore${RESET}"
-bash "${clonedir}/run.sh install"
+bash "${clonedir}/run.sh" install
 
 if [[ -d "${HOME}/.pv-shcore" ]]; then
-    echo "source ${HOME}/.pv-shcore" > /tmp/pv-shellcore
+    echo "source ${HOME}/.pv-shcore/load.sh" > /tmp/pv-shellcore
 elif [[ -d "/usr/local/share/pv-shcore" ]]; then
-    echo "source /usr/local/share/pv-shcore" > /tmp/pv-shellcore
+    echo "source /usr/local/share/pv-shcore/load.sh" > /tmp/pv-shellcore
 else
     >&2 echo "${RED}${BOLD}ERROR: Install appeared successful, but neither the local nor global ShellCore " \
              "installation folder could be found...${RESET}\n"

@@ -10,7 +10,7 @@
 #############################################################
 FROM ubuntu:bionic
 
-RUN apt-get update -qy && apt-get install -y zsh bash-completion git && apt-get clean -qy
+RUN apt-get update -qy && apt-get install -y zsh bash-completion curl wget git && apt-get clean -qy
 
 COPY . /root/sgshell
 
