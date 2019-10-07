@@ -19,12 +19,16 @@ Below is a short snippet that you can place at the start of your script or main 
  - Attempt to load ShellCore from `~/.pv-shcore` (local) first, then fallback to `/usr/local/share/pv-shcore` (global)
 
 ```bash
-# Attempt to load Privex ShellCore from the local or global install directory, if not found, try to install it.
+# Error handling function for ShellCore
 _sc_fail() { >&2 echo "Failed to load or install Privex ShellCore..." && exit 1; }
-[[ -d "${HOME}/.pv-shcore" ]] || [[ -d "/usr/local/share/pv-shcore" ]] || \
+# If `load.sh` isn't found in the user install / global install, then download and run the auto-installer
+# from Privex's CDN.
+[[ -f "${HOME}/.pv-shcore/load.sh" ]] || [[ -f "/usr/local/share/pv-shcore/load.sh" ]] || \
     { curl -fsS https://cdn.privex.io/github/shell-core/install.sh | bash >/dev/null; } || _sc_fail
 
-[[ -d "${HOME}/.pv-shcore" ]] && source "${HOME}/.pv-shcore/load.sh" || source "/usr/local/share/pv-shcore/load.sh" || _sc_fail
+# Attempt to load the local install of ShellCore first, then fallback to global install if it's not found.
+[[ -d "${HOME}/.pv-shcore" ]] && source "${HOME}/.pv-shcore/load.sh" || \
+    source "/usr/local/share/pv-shcore/load.sh" || _sc_fail
 
 # Optionally, you may wish to run `autoupdate_shellcore` after loading it. This will quietly update ShellCore to
 # the latest version. 
