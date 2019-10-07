@@ -13,9 +13,28 @@
 ! [ -z ${ZSH_VERSION+x} ] && _SDIR=${(%):-%N} || _SDIR="${BASH_SOURCE[0]}"
 __DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 
+set -eE    # Exit on error
+
+IGNORE_ERR=0 # Set this to 1 within a function to ignore the next non-zero return code. Automatically re-set's to 0 after a non-zero.
+
+error() {
+  local parent_lineno="$1"
+  local message="$2"
+  local code="${3:-1}"
+  (($code==0)) && return
+  (($IGNORE_ERR==1)) && IGNORE_ERR=0 && return
+  >&2 echo -e "${RED}${BOLD}ERROR: Exited Privex ShellCore as a non-zero return code ($code) was encountered near line ${parent_lineno} (run.sh)\n" \
+              "Check for any error messages above. For extra debugging output from ShellCore, run 'export SG_DEBUG=1' ${RESET} \n"
+  if [[ -n "$message" ]] ; then
+    >&2 echo -e "${RED}Error message was:${RESET}"
+    >&2 echo "$message"
+  fi
+  exit "${code}"
+}
+trap 'error ${LINENO}' ERR
+
 source "${__DIR}/load.sh"
 DIR="$__DIR"
-
 INST_DIR="$SG_DIR"
 
 # This global variable is used for context information - if the calling function is operating
@@ -29,6 +48,8 @@ _sg_auto_update() {
     [[ ! -d "$INST_DIR" ]] && msgerr bold red "The folder '$INST_DIR' does not exist, so it cannot be updated..." && return 1  
     cd "$INST_DIR"
     _debug green " (+) Updating existing installation at '$INST_DIR'"
+    set +eE  # Temporarily disable exit-on-error so we can handle the return code ourselves
+    IGNORE_ERR=1
     if (($SG_IS_GLOBAL==1)); then
         gp_out=$(sudo git pull 2>&1)
         _ret=$?
@@ -36,6 +57,8 @@ _sg_auto_update() {
         gp_out=$(git pull 2>&1)
         _ret=$?
     fi
+    set -eE
+
     if (($_ret==0)); then
         _debug green " (+) 'git pull' returned zero - successfully updated?"
         _debug "GIT PULL output:\n ${gp_out}"
@@ -47,24 +70,50 @@ _sg_auto_update() {
     return $_ret
 }
 
-_sg_install_local() {
-    INST_DIR="$SG_LOCALDIR"
-    _debug green " (+) Installing SG Shell Core locally: '$INST_DIR' ...\n"
-    if [[ -d "$INST_DIR" ]]; then
+NEED_REINSTALL=0
+
+_sg_fallback_update() {
+    local INST_DIR="$1"
+    if [[ ! -f "${INST_DIR}/load.sh" ]]; then
+        msgerr bold yellow "WARNING: The folder '$INST_DIR' exists, but doesn't contain load.sh..."
+        if (($(len "$INST_DIR")<8)); then
+            msg bold red "The folder '$INST_DIR' appears to be shorter than 8 characters."
+            msg red "For your safety, no automated removal + re-install will be attempted."
+            return 1
+        fi
+        msgerr yellow "Removing the folder and re-installing."
+        (($SG_IS_GLOBAL==1)) && sudo rm -rf "$INST_DIR" || rm -rf "$INST_DIR"
+        NEED_REINSTALL=1
+        return 0
+    else
         _debug yellow "    -> The folder '$INST_DIR' already exists... Attempting to update it.\n"
         _sg_auto_update "$INST_DIR"
         return $?
+    fi
+}
+
+_sg_install_local() {
+    INST_DIR="$SG_LOCALDIR"
+    _debug green " (+) Installing SG Shell Core locally: '$INST_DIR' ...\n"
+    # If the installation folder already exists, attempt to update it.
+    # If the install appears to be damaged, NEED_REINSTALL would be set to 1, meaning that the install folder
+    # was removed by fallback_update, so we should continue with the installation.
+    if [[ -d "$INST_DIR" ]]; then
+        _sg_fallback_update "$INST_DIR"
+        ((${NEED_REINSTALL}==0)) && return 0
     fi
     _debug yellow "     -> Creating folder '$INST_DIR' ..."
     mkdir -p "$INST_DIR" &> /dev/null
     
     _debug yellow "     -> Copying all files from '$SG_DIR' to '$INST_DIR' ..."
-    cp -Rf --no-preserve="ownership" "${SG_DIR}/." "$INST_DIR"
+    cp -Rf "${SG_DIR}/." "$INST_DIR"
 
     _debug yellow "     -> Adjusting permissions for '$INST_DIR' and files/folders within it..."
     chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
     chmod -R 755 "$INST_DIR"/{base,lib}
     chmod -R 777 "$INST_DIR"/logs
+    local u=$(whoami)
+    chown -R "$u" "$INST_DIR"
 
     _debug green " +++ Finished installing SG Shell Core locally into '$INST_DIR'"
     return 0
@@ -74,21 +123,25 @@ _sg_install_global() {
     local INST_DIR="$SG_GLOBALDIR"
     SG_IS_GLOBAL=1
     _debug green " (+) Installing SG Shell Core systemwide: '$INST_DIR' ...\n"
+    # If the installation folder already exists, attempt to update it.
+    # If the install appears to be damaged, NEED_REINSTALL would be set to 1, meaning that the install folder
+    # was removed by fallback_update, so we should continue with the installation.
     if [[ -d "$INST_DIR" ]]; then
-        _debug yellow "    -> The folder '$INST_DIR' already exists... Attempting to update it.\n"
-        _sg_auto_update "$INST_DIR"
-        return $?
+        _sg_fallback_update "$INST_DIR"
+        ((${NEED_REINSTALL}==0)) && return 0
     fi
     _debug yellow "     -> Creating folder '$INST_DIR' ..."
     sudo mkdir -p "$INST_DIR" &> /dev/null
     
     _debug yellow "     -> Copying all files from '$SG_DIR' to '$INST_DIR' ..."
-    sudo cp -Rf --no-preserve="ownership" "${SG_DIR}/." "$INST_DIR"
+    sudo cp -Rf "${SG_DIR}/." "$INST_DIR"
 
     _debug yellow "     -> Adjusting permissions for '$INST_DIR' and files/folders within it..."
     sudo chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
     sudo chmod -R 755 "$INST_DIR"/{base,lib}
     sudo chmod -R 777 "$INST_DIR"/logs
+    local u=$(whoami)
+    sudo chown -R "$u" "$INST_DIR"
 
     _debug green " +++ Finished installing SG Shell Core systemwide into '$INST_DIR'"
     return 0

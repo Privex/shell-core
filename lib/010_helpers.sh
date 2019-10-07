@@ -24,6 +24,10 @@
 # e.g.    [ -z ${SRCED_010HLP+x} ] && source "$DIR/010_helpers.sh"
 export SRCED_010HLP=1
 
+# just a small wrapper around wc to pipe in all args
+# saves constantly piping it in
+len() { wc -c <<< "${@:1}"; }
+
 # From https://stackoverflow.com/a/8574392/2648583
 # Usage: containsElement "somestring" "${myarray[@]}"
 # Returns 0 (true) if element exists in given array, or 1 if it doesn't.
