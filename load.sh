@@ -46,6 +46,7 @@ if [[ "$CURRENT_SHELL" == "bash" ]]; then
     done
 elif [[ "$CURRENT_SHELL" == "zsh" ]]; then
     _debug green " (+) Detected shell 'zsh'. Loading zsh-specific files.\n"
+    setopt +o nomatch   # Don't throw an error if there's no matches for a glob...
     for f in "${SG_DIR}/lib"/*.zsh; do
         [ -e "$f" ] || continue
         _debug yellow "    -> Sourcing zsh file $f"

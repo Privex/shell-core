@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-export S_CORE_VER="0.1.1"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+export S_CORE_VER="0.1.2"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
