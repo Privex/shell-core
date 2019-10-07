@@ -35,7 +35,7 @@ autoupdate_shellcore
 
 **Bundling with your application**
 
-You can also simply `git clone https://github.com/Privex/shellcore.git` and place it within your project, or use a Git Submodule.
+You can also simply `git clone https://github.com/Privex/shell-core.git` and place it within your project, or use a Git Submodule.
 
 If you're concerned about ShellCore updates potentially breaking your script, then this may be the preferred option - as any other
 shellscript project (or a user) on the system could trigger updates to the local/global ShellCore installation.
