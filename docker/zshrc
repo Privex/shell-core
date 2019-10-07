@@ -1,0 +1,23 @@
+
+#!/usr/bin/env zsh
+export LC_ALL="C.UTF-8"
+export LC_CTYPE="C.UTF-8"
+export LANG="C.UTF-8"
+export LANGUAGE="C.UTF-8"
+
+if [ -t 1 ]; then
+    BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
+    MAGENTA="$(tput setaf 5)" CYAN="$(tput setaf 6)" WHITE="$(tput setaf 7)" RESET="$(tput sgr0)"
+else
+    BOLD="" RED="" GREEN="" YELLOW="" BLUE=""
+    MAGENTA="" CYAN="" WHITE="" RESET=""
+fi
+
+export PS1="[ %B${GREEN}%n${WHITE}@${MAGENTA}%m ${YELLOW}%~%b ]%B %% %b"
+
+alias ls="ls --color=always"
+alias l="ls -lah"
+alias la="ls -la"
+
+export SG_DEBUG=1
+

@@ -1,0 +1,15 @@
+export LC_ALL="C.UTF-8"
+export LC_CTYPE="C.UTF-8"
+export LANG="C.UTF-8"
+export LANGUAGE="C.UTF-8"
+
+. /etc/bash_completion
+
+export PS1="\[\033[38;5;13m\]\u\[$(tput sgr0)\]\[\033[38;5;15m\]@\[$(tput sgr0)\]\[\033[38;5;156m\]\h\[$(tput sgr0)\]\[\033[38;5;15m\] \[$(tput sgr0)\]\[\033[38;5;6m\]\w\[$(tput sgr0)\]\[\033[38;5;15m\] \\$\[$(tput sgr0)\] "
+
+alias ls="ls --color=always"
+alias l="ls -lah"
+alias la="ls -la"
+
+export SG_DEBUG=1
+
