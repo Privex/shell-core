@@ -13,27 +13,11 @@
 ! [ -z ${ZSH_VERSION+x} ] && _SDIR=${(%):-%N} || _SDIR="${BASH_SOURCE[0]}"
 __DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 
-set -eE    # Exit on error
-
-IGNORE_ERR=0 # Set this to 1 within a function to ignore the next non-zero return code. Automatically re-set's to 0 after a non-zero.
-
-error() {
-  local parent_lineno="$1"
-  local message="$2"
-  local code="${3:-1}"
-  (($code==0)) && return
-  (($IGNORE_ERR==1)) && IGNORE_ERR=0 && return
-  >&2 echo -e "${RED}${BOLD}ERROR: Exited Privex ShellCore as a non-zero return code ($code) was encountered near line ${parent_lineno} (run.sh)\n" \
-              "Check for any error messages above. For extra debugging output from ShellCore, run 'export SG_DEBUG=1' ${RESET} \n"
-  if [[ -n "$message" ]] ; then
-    >&2 echo -e "${RED}Error message was:${RESET}"
-    >&2 echo "$message"
-  fi
-  exit "${code}"
-}
-trap 'error ${LINENO}' ERR
+# Load bash error handler library
+source "${__DIR}/base/trap.bash"
 
 source "${__DIR}/load.sh"
+
 DIR="$__DIR"
 INST_DIR="$SG_DIR"
 
@@ -48,26 +32,16 @@ _sg_auto_update() {
     [[ ! -d "$INST_DIR" ]] && msgerr bold red "The folder '$INST_DIR' does not exist, so it cannot be updated..." && return 1  
     cd "$INST_DIR"
     _debug green " (+) Updating existing installation at '$INST_DIR'"
-    set +eE  # Temporarily disable exit-on-error so we can handle the return code ourselves
-    IGNORE_ERR=1
-    if (($SG_IS_GLOBAL==1)); then
-        gp_out=$(sudo git pull 2>&1)
-        _ret=$?
-    else
-        gp_out=$(git pull 2>&1)
-        _ret=$?
-    fi
-    set -eE
 
-    if (($_ret==0)); then
-        _debug green " (+) 'git pull' returned zero - successfully updated?"
-        _debug "GIT PULL output:\n ${gp_out}"
-        date +'%s' > "${INST_DIR}/.last_update"
+    if (($SG_IS_GLOBAL==1)); then
+        gp_out=$(sudo git pull -q)
     else
-        msgerr bold yellow "WARNING: Attempted to update existing install at '$INST_DIR' but got non-zero status from 'git pull'"
-        msgerr red "GIT PULL output:${RESET}\n${gp_out}"
+        gp_out=$(git pull -q)
     fi
-    return $_ret
+
+    _debug green " (+) 'git pull' returned zero - successfully updated?"
+    _debug "GIT PULL output:\n ${gp_out}"
+    date +'%s' > "${INST_DIR}/.last_update"
 }
 
 NEED_REINSTALL=0
@@ -84,11 +58,11 @@ _sg_fallback_update() {
         msgerr yellow "Removing the folder and re-installing."
         (($SG_IS_GLOBAL==1)) && sudo rm -rf "$INST_DIR" || rm -rf "$INST_DIR"
         NEED_REINSTALL=1
-        return 0
+        return
     else
         _debug yellow "    -> The folder '$INST_DIR' already exists... Attempting to update it.\n"
         _sg_auto_update "$INST_DIR"
-        return $?
+        return
     fi
 }
 
@@ -174,6 +148,73 @@ _sg_install() {
     esac
 }
 
+remove_sources() {
+    sed -E "s/.*source \".*\.sh\".*//g" "$@"
+    # raise_error
+}
+
+remove_comments() {
+    sed -E "s/^#.*//g" "$@" | sed -E "s/^[[:space:]]+#.*//g"
+    # raise_error "unexpected error removing comments" "${BASH_SOURCE[0]}" $LINENO
+}
+
+_sg_compile() {
+    local use_file=0 out_file
+    (($#>0)) && use_file=1 && out_file="$1" || out_file="$(mktemp)"
+    : ${SHEBANG_LINE='#!/usr/bin/env bash'}
+    {
+        echo "$SHEBANG_LINE"
+        export __CMP_NOW=$(date)
+        sg_copyright="
+#############################################################
+#                                                           #
+# Privex's Shell Core  (Version v${S_CORE_VER})                     #
+# Cross-platform / Cross-shell helper functions             #
+#                                                           #
+# Released under the GNU GPLv3                              #
+#                                                           #
+# Official Repo: github.com/Privex/shell-core               #
+#                                                           #
+# This minified script was compiled at:                     #
+# $__CMP_NOW                              #
+#                                                           #
+#############################################################
+"
+        echo "$sg_copyright"
+        echo -e "\n### --------------------------------------"
+        echo "### Privex/shell-core/init.sh"
+        echo "### --------------------------------------"
+        cat "${SG_DIR}/init.sh" | remove_sources | remove_comments | tr -s '\n'
+        echo -e "\n### --------------------------------------"
+        echo "### Privex/shell-core/base/identify.sh"
+        echo "### --------------------------------------"
+        cat "${SG_DIR}/base/identify.sh" | remove_sources | remove_comments | tr -s '\n'
+        echo -e "\n### --------------------------------------"
+        echo "### Privex/shell-core/base/colors.sh"
+        echo "### --------------------------------------"
+        cat "${SG_DIR}/base/colors.sh" | remove_sources | remove_comments | tr -s '\n'
+        echo -e "\n### --------------------------------------"
+        echo "### Privex/shell-core/base/permission.sh"
+        echo "### --------------------------------------"
+        cat "${SG_DIR}/base/permission.sh" | remove_sources | remove_comments | tr -s '\n'
+
+        for f in "${SG_DIR}/lib"/*.sh; do
+            local b=$(basename "$f")
+            echo -e "\n### --------------------------------------"
+            echo "### Privex/shell-core/lib/$b"
+            echo "### --------------------------------------"
+            cat $f | remove_sources | remove_comments | tr -s '\n'
+        done
+        echo
+        echo "$sg_copyright"
+        echo
+    } > "$out_file"
+    
+    (($use_file==1)) && msg green " -> Compiled ShellCore into file '$out_file'" || { cat "$out_file"; rm -f "$out_file"; }
+
+    return 0
+}
+
 _help() {
     msg green "Privex's Shell Core - Version v${S_CORE_VER}"
     msg green "(C) 2019 Privex - Released under the GNU GPL v3 license"
@@ -228,7 +269,12 @@ case "$1" in
         msgerr red "As 'localfb' was not specified, giving up. Cannot update this installation."
         exit 5
         ;;
+    compile)
+        _sg_compile "${@:2}"
+        exit $?
+        ;;
     dockertest)
+        error_control 2
         cd "$SG_DIR"
         msg green " -> Building image tag 'sgshell' from directory '$SG_DIR'"
         docker build -t sgshell .
@@ -251,6 +297,7 @@ case "$1" in
         ;;
 
     *)
+        error_control 2
         msg bold red "Unknown command '$1'\n"
         _help
         exit 99

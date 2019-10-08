@@ -119,13 +119,16 @@ function gnusafe () {
     fi
 }
 
+function is_alias () {
+    command -V "$1" 2> /dev/null | grep -qi "alias"
+}
 # Ran on exit to ensure no aliases leak out into the environment
 # and break the users terminal
 function gnusafe-cleanup () {
-    unalias ggrep 2>/dev/null
-    unalias gawk 2>/dev/null
-    unalias gsed 2>/dev/null
-    unalias grep 2>/dev/null
-    unalias awk 2>/dev/null
-    unalias sed 2>/dev/null
+    is_alias ggrep && unalias ggrep 2>/dev/null
+    is_alias gawk && unalias gawk 2>/dev/null
+    is_alias gsed && unalias gsed 2>/dev/null
+    is_alias grep && unalias grep 2>/dev/null
+    is_alias awk && unalias awk 2>/dev/null
+    is_alias sed && unalias sed 2>/dev/null
 }
