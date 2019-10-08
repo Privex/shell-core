@@ -44,6 +44,19 @@ You can also simply `git clone https://github.com/Privex/shell-core.git` and pla
 If you're concerned about ShellCore updates potentially breaking your script, then this may be the preferred option - as any other
 shellscript project (or a user) on the system could trigger updates to the local/global ShellCore installation.
 
+# Features
+
+**Bash Error Handler**
+
+![Screenshot of Error Handler](http://cdn.privex.io/github/shell-core/shellcore_errorhandler.png)
+
+Included with ShellCore's various helpers, is a bash module in `base/trap.bash` - which adds python-like error handling
+to any bash script, with tracebacks, the file and line number of the problematic code, etc.
+
+It's known to work on both Mac OSX as well as Ubuntu Linux Server, and may work on other OS's too.
+
+The error handling module is based on a snippet posted to Stack Overflow by Luca Borrione - Source: https://stackoverflow.com/a/13099228
+
 # License
 
 ```
