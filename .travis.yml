@@ -12,6 +12,7 @@ addons:
       - gawk
       - ggrep
       - bash
+    update: true
 
 jobs:
   include:
