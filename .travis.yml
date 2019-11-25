@@ -22,7 +22,7 @@ install:
   - |
     git clone -q https://github.com/bats-core/bats-core.git /tmp/bats-core
     cd /tmp/bats-core
-    ./install.sh /usr/local/bats-core
+    sudo ./install.sh /usr/local/bats-core
 
 script:
   - /usr/local/bats-core/bin/bats -t tests.bats
