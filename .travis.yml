@@ -27,7 +27,7 @@ jobs:
 
 before_script:
   - |
-    if [[ "${TRAVIS_OS_NAME:-}" == 'osx' ]]; then
+    if [[ "$TRAVIS_OS_NAME" = "osx" ]]; then
       echo "/usr/local/bin/bash" | sudo tee -a /etc/shells
       sudo chsh -s /usr/local/bin/bash $(whoami)
       echo "Real OSX bash version - $(bash --version)"
