@@ -24,7 +24,7 @@ jobs:
 before_script:
   - git clone -q https://github.com/bats-core/bats-core.git
   - sudo cp -R bats-core /usr/local/git-bats
-  - pushd /usr/local/git-bats && sudo ./install.sh /usr/local/bats-core
+  - pushd /usr/local/git-bats && sudo ./install.sh /usr/local/bats-core && popd
 
 script:
   - /usr/local/bats-core/bin/bats -t tests.bats
