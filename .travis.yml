@@ -20,8 +20,8 @@ before_script:
 
 install:
   - |
-    git clone -q https://github.com/bats-core/bats-core.git /tmp/bats-core
-    cd /tmp/bats-core
+    git clone -q https://github.com/bats-core/bats-core.git "$HOME/bats-core"
+    cd "$HOME/bats-core"
     sudo ./install.sh /usr/local/bats-core
 
 script:
