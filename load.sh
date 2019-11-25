@@ -19,40 +19,14 @@ DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 
 source "${DIR}/init.sh"
 
-#########
-# First we load "cross-platform/shell" modules - which are files ending in the generic '.sh' extension. 
-# These should be at least compatible with both bash and zsh
-#########
-_debug green " (+) Loading cross-platform/shell files from ${SG_DIR}\n"
+ident_shell >/dev/null
 
-for f in "${SG_DIR}/lib"/*.sh; do
-    _debug yellow "    -> Sourcing file $f"
-    source "$f"
-done
-
-#########
-# Now we identify the shell we're currently running inside of, so that we can 
-# source shell-exclusive modules - i.e. ones which only run on either zsh or bash, not both. 
-#########
-
-ident_shell >/dev/null 
-
-if [[ "$CURRENT_SHELL" == "bash" ]]; then
-    _debug green " (+) Detected shell 'bash'. Loading bash-specific files.\n"
-    for f in "${SG_DIR}/lib"/*.bash; do
-        [ -e "$f" ] || continue
-        _debug yellow "    -> Sourcing bash file $f"
-        source "$f"
-    done
-elif [[ "$CURRENT_SHELL" == "zsh" ]]; then
-    _debug green " (+) Detected shell 'zsh'. Loading zsh-specific files.\n"
-    setopt +o nomatch   # Don't throw an error if there's no matches for a glob...
-    for f in "${SG_DIR}/lib"/*.zsh; do
-        [ -e "$f" ] || continue
-        _debug yellow "    -> Sourcing zsh file $f"
-        source "$f"
-    done
+if [ -z ${SG_LOAD_LIBS+x} ]; then
+    SG_LOAD_LIBS=(gnusafe helpers)
+    _debug "SG_LOAD_LIBS not specified from environment. Using default libs: ${SG_LOAD_LIBS[@]}"
 else
-    msgerr bold red "Error: Unsupported shell. Only loaded cross-platform helpers" 
+    _debug "SG_LOAD_LIBS was specified in environment. Using environment libs: ${SG_LOAD_LIBS[@]}"
 fi
+
+sg_load_lib "${SG_LOAD_LIBS[@]}"
 

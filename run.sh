@@ -34,6 +34,7 @@ _sg_auto_update() {
     _debug green " (+) Updating existing installation at '$INST_DIR'"
 
     if (($SG_IS_GLOBAL==1)); then
+
         gp_out=$(sudo git pull -q)
     else
         gp_out=$(git pull -q)
@@ -83,8 +84,9 @@ _sg_install_local() {
     cp -Rf "${SG_DIR}/." "$INST_DIR"
 
     _debug yellow "     -> Adjusting permissions for '$INST_DIR' and files/folders within it..."
-    chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
-    chmod -R 755 "$INST_DIR"/{base,lib}
+    # chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
+    # chmod -R 755 "$INST_DIR"/{base,lib}
+    chmod 755 "$INST_DIR"
     chmod -R 777 "$INST_DIR"/logs
     local u=$(whoami)
     chown -R "$u" "$INST_DIR"
@@ -111,8 +113,9 @@ _sg_install_global() {
     sudo cp -Rf "${SG_DIR}/." "$INST_DIR"
 
     _debug yellow "     -> Adjusting permissions for '$INST_DIR' and files/folders within it..."
-    sudo chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
-    sudo chmod -R 755 "$INST_DIR"/{base,lib}
+    # sudo chmod 755 "$INST_DIR" "$INST_DIR"/*.sh 
+    # sudo chmod -R 755 "$INST_DIR"/{base,lib}
+    sudo chmod 755 "$INST_DIR"
     sudo chmod -R 777 "$INST_DIR"/logs
     local u=$(whoami)
     sudo chown -R "$u" "$INST_DIR"

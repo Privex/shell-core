@@ -10,6 +10,15 @@
 #                                                           #
 #############################################################
 
+[ -z ${SG_LIB_LOADED[@]+x} ] || SG_LIB_LOADED[gnusafe]=1
+
+
+# Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
+# script is located, and then source map_libs.sh using a relative path from this script.
+{ [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ]; } && source "${_XDIR}/../map_libs.sh" || true
+SG_LIB_LOADED[gnusafe]=1 # Mark this library script as loaded successfully
+sg_load_lib trap_helper # Check whether 'trap_helper' already been sourced, otherwise source it.
+
 #####
 #
 # Due to the fact that BSD utilities can sometimes suck, 
@@ -101,7 +110,7 @@ function gnusafe () {
         else
             # msg pos " +++ Both gsed and ggrep are available. Aliases have been set to allow this script to work."
             # msg warn "Please be warned. This script may not work as expected on non-Linux systems..."
-            trap gnusafe-cleanup EXIT
+            add_on_exit "gnusafe-cleanup"
             return 0
         fi
     else
@@ -114,7 +123,7 @@ function gnusafe () {
         if [[ $(command -v egrep) ]]; then
             alias egrep="grep -E"
         fi
-        trap gnusafe-cleanup EXIT
+        add_on_exit "gnusafe-cleanup"
         return 0
     fi
 }

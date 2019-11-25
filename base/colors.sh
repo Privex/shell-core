@@ -2,7 +2,20 @@
 export SRCED_COLORS=1
 
 ! [ -z ${ZSH_VERSION+x} ] && _SDIR=${(%):-%N} || _SDIR="${BASH_SOURCE[0]}"
-DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
+_XDIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
+
+# # Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
+# # script is located, and then source map_libs.sh using a relative path from this script.
+# { [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ] } && source "${_XDIR}/../map_libs.sh" || true
+# Mark this library script as loaded successfully
+[ -z ${SG_LIB_LOADED[@]+x} ] && source "${_XDIR}/../map_libs.sh"
+SG_LIB_LOADED[colors]=1
+
+# # Check whether 'core_func' has already been sourced, otherwise source it using the path stored in SG_LIBS
+# ((SG_LIB_LOADED[core_func]==1)) || source "${SG_LIBS[core_func]}"
+
+# [ -z ${SRCED_SG_CORE+x} ] && source "${DIR}/../core/core_func.sh"
+
 
 if [ -t 1 ]; then
     BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
@@ -61,7 +74,6 @@ function msgerr () {
     >&2 msg "$@"
 }
 
-[ -z ${SRCED_IDENT_SH+x} ] && source "${DIR}/identify.sh"
 
 if [[ $(ident_shell) == "bash" ]]; then
     export -f msg msgts >/dev/null

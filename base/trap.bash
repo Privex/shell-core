@@ -102,11 +102,18 @@ fi
 _TRAP_LAST_LINE=""
 _TRAP_LAST_CALLER=""
 _TRAP_ERR_CALL=0
+: ${SRCED_000LOG=""}
 
 ! [ -z ${ZSH_VERSION+x} ] && _SDIR=${(%):-%N} || _SDIR="${BASH_SOURCE[0]}"
 __TRAP_DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 # __DIR="$__TRAP_DIR"
-source "${__TRAP_DIR}/colors.sh"
+# Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
+# script is located, and then source map_libs.sh using a relative path from this script.
+{ [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ]; } && source "${__TRAP_DIR}/../map_libs.sh" || true
+SG_LIB_LOADED[trap]=1 # Mark this library script as loaded successfully
+# Check whether 'colors', 'trap_helper' and 'logging' have already been sourced, otherwise source em.
+sg_load_lib trap_helper colors logging
+# source "${__TRAP_DIR}/colors.sh"
 
 _trap_debug () {
     local dbg_msg="[DEBUG trap.bash]${RESET} $@" 
@@ -123,15 +130,18 @@ set -o errtrace  # trace ERR through 'time command' and other functions
 set -o nounset   ## set -u : exit the script if you try to use an uninitialised variable
 set -o errexit   ## set -e : exit the script if any statement returns a non-true return value
 
-####
-# Log stderr to '$stderr_log' using a named pipe (fifo) with tee, this allows us to log stderr
-# and have it printed to the screen at the same time.
-####
-_trap_log_pipe=$(mktemp -u)
-mkfifo "$_trap_log_pipe"
->&2 tee <"$_trap_log_pipe" "$stderr_log" &
-# Backup the stderr descriptor (2) into descriptor 4 for later restoration
-exec 4>&2 2> "$_trap_log_pipe"
+# ####
+# # Log stderr to '$stderr_log' using a named pipe (fifo) with tee, this allows us to log stderr
+# # and have it printed to the screen at the same time.
+# ####
+# _trap_log_pipe=$(mktemp -u)
+# mkfifo "$_trap_log_pipe"
+# >&2 tee <"$_trap_log_pipe" "$stderr_log" &
+# # Backup the stderr descriptor (2) into descriptor 4 for later restoration
+# exec 4>&2 2> "$_trap_log_pipe"
+
+# [ -z ${SRCED_000LOG} ] && source "$SG_DIR/lib/000_logging.sh"
+
 
 _handle_ignore_err () {
     (($IGNORE_ERR==1)) && IGNORE_ERR=0 && _trap_debug "Ignoring error (1)" && set -eE && return 1
@@ -419,8 +429,8 @@ trap_err_handler() {
     exit $_ret
 }
 
-trap 'exit_handler' EXIT                                    # ! ! ! TRAP EXIT ! ! !
-trap 'trap_err_handler ${LINENO} "$BASH_COMMAND"' ERR       # ! ! ! TRAP ERR ! ! !
+trap_add 'exit_handler' EXIT                                    # ! ! ! TRAP EXIT ! ! !
+trap_add 'trap_err_handler ${LINENO} "$BASH_COMMAND"' ERR       # ! ! ! TRAP ERR ! ! !
 
 
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##

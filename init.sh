@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-export S_CORE_VER="0.2.0"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+S_CORE_VER="0.3.0"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
@@ -35,12 +35,10 @@ DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 : ${SG_UPDATE_SECS=604800}
 SG_LAST_UPDATE=0
 
-export SG_DIR SG_LOCALDIR SG_GLOBALDIR DEBUGLOG SG_DEBUG
-
 last_update_shellcore() {
     if [[ -f "${SG_DIR}/.last_update" ]]; then
         __sg_lst=$(cat "$SG_LAST_UPDATE_FILE")
-        export SG_LAST_UPDATE=$(($__sg_lst))
+        SG_LAST_UPDATE=$(($__sg_lst))
     fi
 }
 
@@ -59,33 +57,50 @@ autoupdate_shellcore() {
     fi
 }
 
-DEBUGLOG_DIR=$(dirname "$DEBUGLOG")
-[[ ! -d "$DEBUGLOG_DIR" ]] && mkdir -p "$DEBUGLOG_DIR" && touch "$DEBUGLOG"
+# DEBUGLOG_DIR=$(dirname "$DEBUGLOG")
+# [[ ! -d "$DEBUGLOG_DIR" ]] && mkdir -p "$DEBUGLOG_DIR" && touch "$DEBUGLOG"
+
+source "${SG_DIR}/map_libs.sh"
+
 
 #########
 # First we source essential "base" scripts, which provide important functions that
 # are used by this init script itself.
 #########
 
-source "${SG_DIR}/base/identify.sh"
-source "${SG_DIR}/base/colors.sh"
-source "${SG_DIR}/base/permission.sh"
+sg_load_lib logging colors permission trap_helper
 
 
-#####
-# Debugging output helper function.
-#
-# Outputs debugging messages with timestamps to $DEBUGLOG
-# If $SG_DEBUG is 1 - then will also print any debugging messages to stderr
-#
-# Example:
-#
-#     _debug yellow "Warning: Something went wrong with x and y because..."
-#
-#####
-_debug() {
-    msg ts "$@" >> "$DEBUGLOG";
-    (($SG_DEBUG!=1)) && return
-    msgerr ts "$@"
+
+cleanup_env() {
+    _debug "[init.cleanup_env] Unsetting any leftover variables"
+    clean_env_prefix "SG_"
+    clean_env_prefix "SRCED_"
 }
+
+####
+# Unset all env vars starting with $1 - works with both bash and zsh
+# Example:
+#     # Would unset SG_DEBUG, SG_DIR, SG_GLOBALDIR etc.
+#     clean_env_prefix "SG_"
+#
+clean_env_prefix() {
+    local clean_vars _prefix="$1"
+    (($#<1)) && fatal "Usage: clean_env_prefix [prefix]"
+    if [[ $(ident_shell) == "bash" ]]; then
+        clean_vars=($(set | egrep "^${_prefix}" | sed -E 's/^('${_prefix}'[a-zA-Z0-9_]+)(\=.*)$/\1/'))
+        for v in "${clean_vars[@]}"; do
+            _debug "[cleanup_env_prefix] [bash ver] Unsetting variable: $v"
+            # unset "$v"
+        done
+    elif [[ $(ident_shell) == "zsh" ]]; then
+        _debug "[cleanup_env_prefix] [zsh ver] Unsetting all variables with pattern: ${_prefix}*"
+        # unset -m ${_prefix}'*'
+    else
+        fatal "Function 'clean_env_prefix' is only compatible with bash or zsh. Detected shell: $(ident_shell)"
+        return 1
+    fi
+}
+
+add_on_exit "cleanup_env"
 

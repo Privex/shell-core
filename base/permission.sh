@@ -10,9 +10,15 @@
 #############################################################
 
 ! [ -z ${ZSH_VERSION+x} ] && _SDIR=${(%):-%N} || _SDIR="${BASH_SOURCE[0]}"
-DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
+_XDIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 
-[ -z ${SRCED_COLORS+x} ] && source "${DIR}/colors.sh"
+# Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
+# script is located, and then source map_libs.sh using a relative path from this script.
+{ [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ]; } && source "${_XDIR}/../map_libs.sh" || true
+SG_LIB_LOADED[permission]=1 # Mark this library script as loaded successfully
+sg_load_lib colors # Check whether 'colors' has already been sourced, otherwise source it.
+
+# [ -z ${SRCED_COLORS+x} ] && source "${DIR}/colors.sh"
 
 #####
 # Check if there are directory permissions issues affecting access to a file.

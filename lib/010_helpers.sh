@@ -13,6 +13,11 @@
 # Various Bash Helper Functions to ease the pain of writing
 # complex, user friendly bash scripts.
 #
+# Several helpers were refactored out of this file into
+#   core/000_core_func.sh
+# Including: 
+#   len has_command has_binary ident_shell sudo
+#
 # -----------------------------------------------------------
 #
 # Most parts written by Someguy123 https://github.com/Someguy123
@@ -20,13 +25,13 @@
 #
 #####################
 
-# Used by dependant scripts to check if this file has already been sourced
-# e.g.    [ -z ${SRCED_010HLP+x} ] && source "$DIR/010_helpers.sh"
-export SRCED_010HLP=1
 
-# just a small wrapper around wc to pipe in all args
-# saves constantly piping it in
-len() { wc -c <<< "${@:1}"; }
+# Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
+# script is located, and then source map_libs.sh using a relative path from this script.
+{ [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ]; } && source "${_XDIR}/../map_libs.sh" || true
+SG_LIB_LOADED[helpers]=1 # Mark this library script as loaded successfully
+sg_load_lib logging colors # Check whether 'colors' and 'logging' have already been sourced, otherwise source them.
+
 
 # From https://stackoverflow.com/a/8574392/2648583
 # Usage: containsElement "somestring" "${myarray[@]}"
@@ -48,22 +53,6 @@ containsElement () {
     return 1
 }
 
-# Returns 0 (true) if a requested command exists (WARNING: this will match functions and aliases too)
-# Use `has_binary` if you want to specifically only test for binaries
-# Example:
-#     has_command zip && echo "zip has binary or alias/function" || echo "error: zip not found"
-#
-has_command() {
-    command -v "$1" > /dev/null
-}
-
-# Returns 0 (true) if the requested command exists as a binary (not as an alias/function)
-# Example:
-#     has_binary git && echo "the binary 'git' is available" || echo "could not find binary 'git' using which"
-#
-has_binary() {
-    /usr/bin/env which "$1" > /dev/null
-}
 
 # Usage: yesno [message] (options...)
 # Displays a bash `read -p` prompt, with the given message, and returns 0 (yes) or 1 (no) depending
@@ -177,38 +166,124 @@ pkg_not_found() {
     fi
 }
 
-# This is an alias function to intercept commands such as 'sudo apt install' and avoid silent failure
-# on systems that don't have sudo - especially if it's being ran as root. Some systems don't have sudo, 
-# but if this script is being ran as root anyway, then we can just bypass sudo anyway and run the raw command.
+# Split argument 1 by argument 2, then output the elements separated by newline, allowing you to split a string
+# into an array
 #
-# If we are in-fact a normal user, then check if sudo is installed - alert the user if it's not.
-# If sudo is installed, then forward the arguments to the real sudo command.
+# For associative arrays (AKA dictionaries / hashes), see split_assoc in 015_bash_helpers.bash 
+# (split_assoc is only compatible with bash)
 #
-sudo() {
-  # If user is not root, check if sudo is installed, then use sudo to run the command
-  if [ "$EUID" -ne 0 ]; then
-    if ! has_binary sudo; then
-      msg bold red "ERROR: You are not root, and you don't have sudo installed. Cannot run command '${@:1}'"
-      msg red "Please either install sudo and add your user to the sudoers group, or run this script as root."
-      sleep 5
-      return 3
+# Usage:
+#
+#     $ x='hello-world-one-two-three'
+#     # Split variable $x into a bash/zsh array by the dash "-" character
+#     $ x_data=($(split_by "$x" "-"))
+#     $ echo "${x_data[0]}"
+#     hello
+#     $ echo "${x_data[1]}"
+#     world
+#
+split_by() {
+    if (($# != 2)); then
+        echo >&2 "Error: split_by requires exactly 2 arguments"
+        return 1
     fi
-    /usr/bin/env sudo "${@:1}"
-    return $?
-  fi
-  # If we got to this point, then the user is already root, so just drop the 'sudo' and run it raw.
-  /usr/bin/env "${@:1}"
+    local split_data="$1" split_sep="$2" data_splitted
+
+    # Backup the field separator so we can restore it once we're done splitting.
+    _IFS="$IFS"
+    IFS="$split_sep"
+    if [[ $(ident_shell) == "bash" ]]; then
+        read -a data_splitted <<<"$split_data"
+    elif [[ $(ident_shell) == "zsh" ]]; then
+        setopt sh_word_split
+        data_splitted=($split_data)
+        setopt +o sh_word_split
+    else
+        fatal "Function 'split_by' is only compatible with bash or zsh. Detected shell: $(ident_shell)"
+        return 1
+    fi
+
+    echo "${data_splitted[@]}"
+
+    IFS="$_IFS"
 }
 
-[ -z ${SRCED_IDENT_SH+x} ] && source "${DIR}/identify.sh"
+
+
+# Split argument 1 into an associative array (AKA dictionary / hash), separating each pair by arg 2, 
+# and the key/value by arg 3.
+# You must source the file location which is outputted to stdout, as bash does not support exporting 
+# associative arrays. The sourced file will add the associative array 'assoc_result' to your shell.
+# 
+# Usage:
+#   NOTE: Due to limitations in both bash and zsh, associative arrays cannot be exported. 
+#   As a workaround, the associative array is serialized into a temporary file, and the tempfile location 
+#   is printed from the function.
+#   You can then source this to load the associative array into your current function, or globally.
+#
+#   In the below example, we split each "item" by commas, then split items into keys and values by ":".
+#
+#   $ x="hello:world,lorem:ipsum,dolor:orange"
+#   $ source $(split_assoc "$x" "," ":")
+#   $ echo "${assoc_result[hello]}"
+#   world
+#
+#   If you want to rename / copy the associative array to a different variable name, you must declare your own
+#   array and loop over the result array.
+#
+#   $ declare -A my_arr
+#   $ for key in "${!assoc_result[@]}"; do
+#         my_arr["$key"]="${assoc_result["$key"]}"
+#     done
+#
+# shellcheck disable=SC2207
+split_assoc() {
+    if (($# != 3)); then
+        echo >&2 "Error: split_assoc requires exactly 3 arguments"
+        return 1
+    fi
+
+    local split_data="$1" item_sep="$2" keyval_sep="$3" s_rows row s_cols
+
+    s_rows=($(split_by "$split_data" "$item_sep"))
+    declare -A assoc_result
+    export assoc_output="$(mktemp)"
+
+    for row in "${s_rows[@]}"; do
+        _debug "Row is: $row"
+        s_cols=($(split_by "$row" "$keyval_sep"))
+        _debug "s_cols is:" ${s_cols[@]}
+
+        num_cols="${#s_cols[@]}"
+        num_cols=$((num_cols))
+        if ((num_cols != 2)); then
+            _debug "Warning: split_assoc row does not have 2 columns (has ${num_cols}): '${s_cols[*]}'"
+            continue
+        fi
+        if [[ $(ident_shell) == "bash" ]]; then
+            assoc_result[${s_cols[0]}]="${s_cols[1]}"
+        elif [[ $(ident_shell) == "zsh" ]]; then
+            assoc_result[${s_cols[1]}]="${s_cols[2]}"
+        else
+            fatal "Function 'split_assoc' is only compatible with bash or zsh. Detected shell: $(ident_shell)"
+            return 1
+        fi
+        
+
+    done
+    # Serialize the associative array to the temporary file, then print the temp file location to stdout.
+    # Source: https://stackoverflow.com/a/55317015
+    declare -p assoc_result >"$assoc_output"
+    echo "$assoc_output"
+}
 
 if [[ $(ident_shell) == "bash" ]]; then
-    export -f sudo containsElement yesno pkg_not_found >/dev/null
+    export -f sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
 elif [[ $(ident_shell) == "zsh" ]]; then
-    export sudo containsElement yesno pkg_not_found >/dev/null
+    export sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
 else
     msgerr bold red "WARNING: Could not identify your shell. Attempting to export with plain export..."
-    export sudo containsElement yesno pkg_not_found >/dev/null
+    export sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
 fi
 
 
