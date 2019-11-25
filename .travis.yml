@@ -17,16 +17,19 @@ jobs:
   include:
     - os: linux
       dist: xenial
+      env: NAME="Ubuntu 16.04 Xenial"
     - os: linux
       dist: bionic
+      env: NAME="Ubuntu 18.04 Bionic"
     - os: osx
+      env: NAME="Mac OSX"
 
 
 before_script:
   - |
     if [[ "${TRAVIS_OS_NAME:-}" == 'osx' ]]; then
       echo "/usr/local/bin/bash" | sudo tee -a /etc/shells
-      sudo chsh -s /usr/local/bin/bash -u $(whoami)
+      sudo chsh -s /usr/local/bin/bash $(whoami)
       echo "Real OSX bash version - $(bash --version)"
     fi
   - sudo chsh 
