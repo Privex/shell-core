@@ -2,7 +2,60 @@
 
 A library of shell functions designed to ease the development of shell scripts written for both `bash` and `zsh`.
 
-**UNDER CONSTRUCTION**
+# What's included
+
+ - Core functions
+    - `len` - Check the length of passed arguments, e.g. `len 'hello'` would output `5`
+    - `has_command` - Returns 0 (true) if a requested command exists (function/alias/binary)
+    - `has_binary` - Returns 0 (true) if a command exists as a binary (not an alias/function)
+    - `ident_shell` - Identify the current shell (either bash, zsh or unknown)
+    - `sudo` - Wrapper function designed to prevent issues on systems which don't have `sudo` installed
+ - GnuSafe (`lib/000_gnusafe.sh`) - A function to ensure calls to `sed`, `awk` and `grep` are always the GNU
+   versions, rather than BSD - preventing strange issues on non-Linux systems.
+   It detects whether or not the running system is Linux or a BSD, if the system is a BSD, it will attempt to alias `sed` / `awk` and `grep` to gsed/gawk/ggrep. If the GNU versions are missing, it will display a warning 
+   letting the user know they need to install certain GNU utils.
+ - Error handling helpers
+    - `base/trap.bash` is a painless plug-n-play error handler specifically for Bash scripts, which offers
+      pretty printed tracebacks, stderr tracking, and attempts to identify the line of code causing the issue
+      in a readable way to assist with fixing bugs.
+    - `lib/000_trap_helper.sh` is a set of functions designed to make handling shell script errors easier, 
+      some of which work on both bash and zsh. 
+        - `get_trap_cmd` - shows the code currently tied to a given signal (e.g. `INT` `USR1` or `EXIT`)
+        - `trap_add` - appends to / creates a trap signal, allowing you to easily add multiple functions to
+          bash/zsh traps, instead of just overwriting the trap.
+        - `add_on_exit` - appends shellscript code to be ran when the script terminates. if the script is
+          running on Bash, then it will append to the `EXIT` trap. if the script is running on ZSH, then it
+          will append to the `zshexit` function (or create it if it doesn't exist).
+ - Coloured / Timestamped messages
+    - Inside of `base/colors.sh` is a set of bash+zsh compatible formatted message functions
+    - `msg` allows you to easily output both plain and coloured messages, e.g. `msg bold red hello world`
+    - `msgerr` works the same as `msg` but outputs your message to stderr instead of stdout
+    - `msgts` (or `msg ts` / `msgerr ts`) adds a timestamp to the start of your message
+      e.g. `msgts hello world` would print `[2019-11-25 22:47:38 GMT] hello world`
+ - General helper functions (`lib/010_helpers.sh`)
+    - `containsElement` - returns 0 (true) if `$1` exists in the array `$2`
+      
+      e.g. `x=(hello world); if containsElement "hello" "${x[@]}"; then echo 'hello is in x'; fi` would print
+      `hello is in x`
+    - `yesno` - (bash only) yes/no prompts made as simple as an `if` statement (or `||` / `&&`).
+      
+      `yesno "Are you sure? (y/n) > " && echo "You said yes" || echo "You said no"`
+    - `pkg_not_found` - Check if the command `$1` is available. If not, install `$2` via apt 
+      (can override package install command via PKG_MGR_INSTALL)
+      
+      Example - If `lz4` doesn't exist, install package `liblz4-tool`: `pkg_not_found lz4 liblz4-tool`
+    
+    - `split_by` - Split a string `$1` into an array by the character `$2`
+      
+      `x=($(split_by "hello-world-abc" "-")); echo "${x[0]}";` would print `hello`
+    
+    - `split_assoc` - Split a string into an associative array (key value pairs). Due to limitations with
+      exporting associative arrays in both zsh/bash, you must source the temporary file which the 
+      function prints to load the array.
+
+      `source $(split_assoc "hello:world,lorem:ipsum" "," ":"); echo "${assoc_result[hello]}"` would print `world`.
+    
+
 
 # Usage
 
@@ -56,6 +109,46 @@ to any bash script, with tracebacks, the file and line number of the problematic
 It's known to work on both Mac OSX as well as Ubuntu Linux Server, and may work on other OS's too.
 
 The error handling module is based on a snippet posted to Stack Overflow by Luca Borrione - Source: https://stackoverflow.com/a/13099228
+
+# Unit Tests
+
+To help with detection of accidental breakage and bugs, we try to add unit tests where possible for ShellCore.
+
+We use [BATS for unit testing](https://github.com/bats-core/bats-core), which is a unit testing system for Bash.
+
+To run the tests, you first need to [install BATS](https://github.com/bats-core/bats-core). If you're on OSX, just run `brew install bats-core`
+
+**Running tests.bats directly**
+
+The simplest way to run the tests is to just execute `tests.bats` - as it has the appropriate shebang and should be executable.
+
+```bash
+$ ./tests.bats           
+ ✓ test has_binary returns zero with existant binary (ls)
+ ✓ test has_binary returns non-zero with non-existant binary (thisbinaryshouldnotexit)
+ ✓ test has_binary returns non-zero for existing function but non-existant binary (example_test_func)
+ ✓ test has_command returns zero for existing function but non-existant binary (example_test_func)
+ ✓ test has_command returns zero for non-existing function but existant binary (ls)
+ ...
+ 19 tests, 0 failures
+
+```
+
+**Running tests.bats via the bats program**
+
+You can also run the tests via the `bats` program itself. This gives you more customization, e.g. you can run it in TAPS mode
+with the `-t` flag (often required for compatibility with automated testing systems like Travis).
+
+```bash
+$ bats -t tests.bats                           
+  1..19
+  ok 1 test has_binary returns zero with existant binary (ls)
+  ok 2 test has_binary returns non-zero with non-existant binary (thisbinaryshouldnotexit)
+  ok 3 test has_binary returns non-zero for existing function but non-existant binary (example_test_func)
+  ok 4 test has_command returns zero for existing function but non-existant binary (example_test_func)
+  ok 5 test has_command returns zero for non-existing function but existant binary (ls)
+```
+
 
 # License
 

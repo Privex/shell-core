@@ -40,28 +40,28 @@ fi
 #
 #####
 function msg () {
+    local _color="" _dt="" _msg=""
     if [[ "$#" -eq 0 ]]; then echo ""; return; fi;
-    if [[ "$#" -eq 1 ]]; then
-        echo -e "$1"
-        return
-    fi
-    [[ "$1" == "ts" ]] && shift && _msg="[$(date +'%Y-%m-%d %H:%M:%S %Z')] " || _msg=""
-    if [[ "$#" -gt 2 ]] && [[ "$1" == "bold" ]]; then
+    [[ "$1" == "ts" ]] && shift && _dt="[$(date +'%Y-%m-%d %H:%M:%S %Z')] " || _dt=""
+    if [[ "$#" -gt 1 ]] && [[ "$1" == "bold" ]]; then
         echo -n "${BOLD}"
         shift
     fi
-    (($#==1)) && _msg+="$@" || _msg+="${@:2}"
+    (($#==1)) || _msg="${@:2}"
 
     case "$1" in
-        bold) echo -e "${BOLD}${_msg}${RESET}";;
-        BLUE|blue) echo -e "${BLUE}${_msg}${RESET}";;
-        YELLOW|yellow) echo -e "${YELLOW}${_msg}${RESET}";;
-        RED|red) echo -e "${RED}${_msg}${RESET}";;
-        GREEN|green) echo -e "${GREEN}${_msg}${RESET}";;
-        CYAN|cyan) echo -e "${CYAN}${_msg}${RESET}";;
-        MAGENTA|magenta|PURPLE|purple) echo -e "${MAGENTA}${_msg}${RESET}";;
-        * ) echo -e "${_msg}";;
+        bold) _color="${BOLD}";;
+        BLUE|blue) _color="${BLUE}";;
+        YELLOW|yellow) _color="${YELLOW}";;
+        RED|red) _color="${RED}";;
+        GREEN|green) _color="${GREEN}";;
+        CYAN|cyan) _color="${CYAN}";;
+        MAGENTA|magenta|PURPLE|purple) _color="${MAGENTA}";;
+        * ) _msg="$1 ${_msg}";;
     esac
+
+    (($#==1)) && _msg="${_dt}$1" || _msg="${_color}${_dt}${_msg}"
+    echo -e "$_msg${RESET}"
 }
 
 # Alias for 'msg' function with timestamp on the left.
