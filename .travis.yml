@@ -1,5 +1,17 @@
 language: bash
 
+addons:
+  apt:
+    packages:
+      - git
+      - curl
+      - shellcheck
+  homebrew:
+    packages:
+      - gsed
+      - gawk
+      - ggrep
+
 jobs:
   include:
     - os: linux
@@ -10,19 +22,9 @@ jobs:
 
 
 before_script:
-  - |
-    if [[ "${TRAVIS_OS_NAME:-}" == 'linux' ]]; then
-      sudo apt-get install -y git curl shellcheck
-    fi
-    if [[ "${TRAVIS_OS_NAME:-}" == 'brew' ]]; then
-      brew install gsed gawk ggrep
-    fi
-
-install:
-  - |
-    git clone -q https://github.com/bats-core/bats-core.git "$HOME/bats-core"
-    cd "$HOME/bats-core"
-    sudo ./install.sh /usr/local/bats-core
+  - git clone -q https://github.com/bats-core/bats-core.git
+  - sudo cp -R bats-core /usr/local/git-bats
+  - pushd /usr/local/git-bats && sudo ./install.sh /usr/local/bats-core
 
 script:
   - /usr/local/bats-core/bin/bats -t tests.bats
