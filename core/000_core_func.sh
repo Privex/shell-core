@@ -25,7 +25,10 @@ SRCED_SGCORE=1
 
 # just a small wrapper around wc to pipe in all args
 # saves constantly piping it in
-len() { wc -c <<< "${@:1}"; }
+#   $ len "hello"
+#   5
+#
+len() { local l=$(wc -c <<< "${@:1}"); echo $((l-1)); }
 
 # Returns 0 (true) if a requested command exists (WARNING: this will match functions and aliases too)
 # Use `has_binary` if you want to specifically only test for binaries
