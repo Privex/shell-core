@@ -20,6 +20,12 @@ COPY docker/zshrc /root/.zshrc
 COPY docker/bashrc /etc/skel/.bashrc
 COPY docker/zshrc /etc/skel/.zshrc
 
+RUN echo "Installing bats-core/bats-core (Bash unit testing)" \
+    && git clone -q https://github.com/bats-core/bats-core.git /tmp/bats-core \
+    && cd /tmp/bats-core \
+    && ./install.sh /usr \
+    && cd && rm -rf /tmp/bats-core
+
 RUN adduser --gecos "" --disabled-password testuser
 
 WORKDIR /root/sgshell

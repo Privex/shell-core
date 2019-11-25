@@ -33,6 +33,24 @@ SG_LIB_LOADED[helpers]=1 # Mark this library script as loaded successfully
 sg_load_lib logging colors # Check whether 'colors' and 'logging' have already been sourced, otherwise source them.
 
 
+# Remove any lines containing 'source xxxx.sh'
+remove_sources() { sed -E "s/.*source \".*\.sh\".*//g" "$@"; }
+
+# Compress instances of more than one blank line into a singular blank line
+# Unlike "tr -s '\n'" this will only compact multiple blank lines into one, instead of
+# removing blank lines entirely.
+compress_newlines() { cat -s "$@"; }
+
+# Trim newlines down to singular newlines (no blank lines allowed)
+remove_newlines() { tr -s '\n'; }
+
+# Remove any comments starting with '#'
+remove_comments() { sed -E "s/^#.*//g" "$@" | sed -E "s/^[[:space:]]+#.*//g"; }
+
+# Trim away any /usr/bin/* or /bin/* shebangs - either pipe in data, or pass filename as argument
+remove_shebangs() { sed -E "s;^#!/usr/bin.*$;;" "$@" | sed -E "s;^#!/bin.*$;;"; }
+
+
 # From https://stackoverflow.com/a/8574392/2648583
 # Usage: containsElement "somestring" "${myarray[@]}"
 # Returns 0 (true) if element exists in given array, or 1 if it doesn't.

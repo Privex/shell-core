@@ -1,0 +1,30 @@
+
+
+jobs:
+  include:
+    - os: linux
+      dist: xenial
+    - os: linux
+      dist: bionic
+    - os: osx
+
+
+before_script:
+  - |
+    if [[ "${TRAVIS_OS_NAME:-}" == 'linux' ]]; then
+      sudo apt-get install -y git curl shellcheck
+    fi
+    if [[ "${TRAVIS_OS_NAME:-}" == 'brew' ]]; then
+      brew install gsed gawk ggrep
+    fi
+
+install:
+  - |
+    git clone -q https://github.com/bats-core/bats-core.git /tmp/bats-core
+    cd /tmp/bats-core
+    ./install.sh /usr/local/bats-core
+
+script:
+  - /usr/local/bats-core/bin/bats -t tests.bats
+
+
