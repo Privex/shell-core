@@ -11,6 +11,7 @@ addons:
       - gsed
       - gawk
       - ggrep
+      - bash
 
 jobs:
   include:
@@ -22,6 +23,13 @@ jobs:
 
 
 before_script:
+  - |
+    if [[ "${TRAVIS_OS_NAME:-}" == 'osx' ]]; then
+      echo "/usr/local/bin/bash" | sudo tee -a /etc/shells
+      sudo chsh -s /usr/local/bin/bash -u $(whoami)
+      echo "Real OSX bash version - $(bash --version)"
+    fi
+  - sudo chsh 
   - git clone -q https://github.com/bats-core/bats-core.git
   - sudo cp -R bats-core /usr/local/git-bats
   - pushd /usr/local/git-bats && sudo ./install.sh /usr/local/bats-core && popd
