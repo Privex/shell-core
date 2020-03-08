@@ -74,9 +74,11 @@ sg_load_lib logging colors permission trap_helper
 
 
 cleanup_env() {
+    local error_code="$?"
     _debug "[init.cleanup_env] Unsetting any leftover variables"
     clean_env_prefix "SG_"
     clean_env_prefix "SRCED_"
+    return $error_code
 }
 
 ####
