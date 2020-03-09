@@ -99,8 +99,24 @@ trap_add() {
     done
 }
 
+# Same as trap_add, but adds the trap to the start of the command chain
+# Important for traps that need to detect and handle errors, e.g. base/trap.bash
+trap_prepend() {
+    trap_add_cmd=$1; shift || fatal "${FUNCNAME} usage error"
+    for trap_add_name in "$@"; do
+        trap_out="$(mktemp)"
+
+        get_trap_cmd "$trap_add_name" > "$trap_out"
+        _trap_cmd="$(cat $trap_out)"
+        trap -- "$(printf '%s\n%s\n' "${trap_add_cmd}" "${_trap_cmd}")" "${trap_add_name}" \
+            || exit_fatal "unable to prepend to trap ${trap_add_name}"
+        rm -f "$trap_out" &>/dev/null
+    done
+}
+
 if [[ "$SG_SHELL" == "bash" ]]; then 
     declare -f -t trap_add
+    declare -f -t trap_prepend
 fi
 
 #######

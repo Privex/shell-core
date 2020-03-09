@@ -429,8 +429,8 @@ trap_err_handler() {
     exit $_ret
 }
 
-trap_add 'exit_handler' EXIT                                    # ! ! ! TRAP EXIT ! ! !
-trap_add 'trap_err_handler ${LINENO} "$BASH_COMMAND"' ERR       # ! ! ! TRAP ERR ! ! !
+trap_prepend 'exit_handler' EXIT                                    # ! ! ! TRAP EXIT ! ! !
+trap_prepend 'trap_err_handler ${LINENO} "$BASH_COMMAND"' ERR       # ! ! ! TRAP ERR ! ! !
 
 
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
