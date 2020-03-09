@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-S_CORE_VER="0.4.0"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+S_CORE_VER="0.4.1"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
@@ -74,11 +74,9 @@ sg_load_lib logging colors permission trap_helper
 
 
 cleanup_env() {
-    local error_code="$?"
     _debug "[init.cleanup_env] Unsetting any leftover variables"
     clean_env_prefix "SG_"
     clean_env_prefix "SRCED_"
-    return $error_code
 }
 
 ####
