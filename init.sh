@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-S_CORE_VER="0.4.2"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+S_CORE_VER="0.4.3"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
@@ -34,6 +34,8 @@ DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 # How many seconds must've passed since the last update to trigger an auto-update
 : ${SG_UPDATE_SECS=604800}
 SG_LAST_UPDATE=0
+
+_ENV_CLEAN_BLACKLIST=('SG_DEBUG')
 
 last_update_shellcore() {
     if [[ -f "${SG_DIR}/.last_update" ]]; then
@@ -89,14 +91,18 @@ clean_env_prefix() {
     local clean_vars _prefix="$1"
     (($#<1)) && fatal "Usage: clean_env_prefix [prefix]"
     if [[ $(ident_shell) == "bash" ]]; then
-        clean_vars=($(set | egrep "^${_prefix}" | sed -E 's/^('${_prefix}'[a-zA-Z0-9_]+)(\=.*)$/\1/'))
+        mapfile -t clean_vars < <(set | grep -E "^${_prefix}" | sed -E 's/^('${_prefix}'[a-zA-Z0-9_]+)(\=.*)$/\1/')
         for v in "${clean_vars[@]}"; do
-            _debug "[cleanup_env_prefix] [bash ver] Unsetting variable: $v"
-            unset "$v"
+            if ! containsElement "$v" "${_ENV_CLEAN_BLACKLIST[@]}"; then
+                _debug "[cleanup_env_prefix] [bash ver] Unsetting variable: $v"
+                unset "$v"
+            else
+                _debug "[cleanup_env_prefix] [bash ver] Skipping blacklisted variable: $v"
+            fi
         done
     elif [[ $(ident_shell) == "zsh" ]]; then
         _debug "[cleanup_env_prefix] [zsh ver] Unsetting all variables with pattern: ${_prefix}*"
-        unset -m ${_prefix}'*'
+        unset -m "${_prefix}*"
     else
         fatal "Function 'clean_env_prefix' is only compatible with bash or zsh. Detected shell: $(ident_shell)"
         return 1
