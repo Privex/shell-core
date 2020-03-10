@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-S_CORE_VER="0.4.1"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+S_CORE_VER="0.4.2"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
@@ -92,11 +92,11 @@ clean_env_prefix() {
         clean_vars=($(set | egrep "^${_prefix}" | sed -E 's/^('${_prefix}'[a-zA-Z0-9_]+)(\=.*)$/\1/'))
         for v in "${clean_vars[@]}"; do
             _debug "[cleanup_env_prefix] [bash ver] Unsetting variable: $v"
-            # unset "$v"
+            unset "$v"
         done
     elif [[ $(ident_shell) == "zsh" ]]; then
         _debug "[cleanup_env_prefix] [zsh ver] Unsetting all variables with pattern: ${_prefix}*"
-        # unset -m ${_prefix}'*'
+        unset -m ${_prefix}'*'
     else
         fatal "Function 'clean_env_prefix' is only compatible with bash or zsh. Detected shell: $(ident_shell)"
         return 1

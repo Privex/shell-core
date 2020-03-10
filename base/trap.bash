@@ -90,6 +90,8 @@ export IGNORE_ERR=0
 #
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##
 
+set +u   # Temporarily allow uninitialised vars so we can test for g_libs
+
 if (("${g_libs[$lib_name]+_}")); then
     return 0
 else
@@ -110,7 +112,7 @@ __TRAP_DIR="$( cd "$( dirname "${_SDIR}" )" && pwd )"
 # Check that both SG_LIB_LOADED and SG_LIBS exist. If one of them is missing, then detect the folder where this
 # script is located, and then source map_libs.sh using a relative path from this script.
 { [ -z ${SG_LIB_LOADED[@]+x} ] || [ -z ${SG_LIBS[@]+x} ]; } && source "${__TRAP_DIR}/../map_libs.sh" || true
-SG_LIB_LOADED[trap]=1 # Mark this library script as loaded successfully
+SG_LIB_LOADED[traplib]=1 # Mark this library script as loaded successfully
 # Check whether 'colors', 'trap_helper' and 'logging' have already been sourced, otherwise source em.
 sg_load_lib trap_helper colors logging
 # source "${__TRAP_DIR}/colors.sh"

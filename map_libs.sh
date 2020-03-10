@@ -45,7 +45,7 @@ if [ -z ${SG_LIB_LOADED[@]+x} ]; then
     _debug "[map_libs.sh] SG_LIB_LOADED not set. Declaring SG_LIB_LOADED assoc array."
     declare -A SG_LIB_LOADED
     SG_LIB_LOADED=(
-        [colors]=0 [identify]=0 [permission]=0 [trap]=0
+        [colors]=0 [identify]=0 [permission]=0 [traplib]=0
         [logging]=0 [core_func]=1
         [gnusafe]=0 [trap_helper]=0 [helpers]=0
     )
@@ -59,7 +59,7 @@ if [ -z ${SG_LIBS[@]+x} ]; then
     SG_LIBS=( 
         [colors]="${SG_DIR}/base/colors.sh" [identify]="${SG_DIR}/base/identify.sh"
         [logging]="${SG_DIR}/core/010_logging.sh" [permission]="${SG_DIR}/base/permission.sh"
-        [trap]="${SG_DIR}/base/trap.bash"
+        [traplib]="${SG_DIR}/base/trap.bash"
         [gnusafe]="${SG_DIR}/lib/000_gnusafe.sh" [trap_helper]="${SG_DIR}/lib/000_trap_helper.sh"
         [helpers]="${SG_DIR}/lib/010_helpers.sh"
     )
@@ -69,6 +69,7 @@ sg_load_lib() {
     (($#<1)) && { >&2 msgerr "[ERROR] sg_load_lib expects at least one argument!" && return 1; }
     local a
     for a in "$@"; do
+        [[ "$a" == "trap" ]] && a="traplib"
         if ((${SG_LIB_LOADED[$a]}<1)); then
             _debug "[map_libs.sg_load_lib] Loading library '$a' from location '${SG_LIBS[$a]}' ..."
             source "${SG_LIBS[$a]}"
