@@ -220,6 +220,11 @@ function exit_handler ()
     _trap_debug "Running exit handler"
     (($error_code==0)) && _trap_debug "Return code 0 - ignoring." && return;
     _trap_debug "Non-zero return code"
+
+    # Disable exit on non-zero, and raising errors for unset variables
+    # to ensure the error handler doesn't get disrupted
+    set +eu
+    
     #
     # LOCAL VARIABLES:
     # ------------------------------------------------------------------
