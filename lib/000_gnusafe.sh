@@ -37,8 +37,15 @@ sg_load_lib trap_helper # Check whether 'trap_helper' already been sourced, othe
 #####
 
 if [ -t 1 ]; then
-    BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
-    MAGENTA="$(tput setaf 5)" CYAN="$(tput setaf 6)" WHITE="$(tput setaf 7)" RESET="$(tput sgr0)"
+    if command -v tput &>/dev/null; then
+        BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
+        PURPLE="$(tput setaf 5)" MAGENTA="$(tput setaf 5)" CYAN="$(tput setaf 6)" WHITE="$(tput setaf 7)"
+        RESET="$(tput sgr0)" NORMAL="$(tput sgr0)"
+    else
+        BOLD='\033[1m' RED='\033[00;31m' GREEN='\033[00;32m' YELLOW='\033[00;33m' BLUE='\033[00;34m'
+        PURPLE='\033[00;35m' MAGENTA='\033[00;35m' CYAN='\033[00;36m' WHITE='\033[01;37m'
+        RESET='\033[0m' NORMAL='\033[0m'
+    fi
 else
     BOLD="" RED="" GREEN="" YELLOW="" BLUE=""
     MAGENTA="" CYAN="" WHITE="" RESET=""
@@ -58,7 +65,7 @@ function gnusafe () {
         # Enable aliases for bash
         shopt -s expand_aliases
     else
-        >&2 echo "${RED}
+        >&2 echo -e "${RED}
     We can't figure out what shell you're running as neither BASH_VERSION 
     nor ZSH_VERSION are set. This is important as we need to figure out 
     which grep/sed/awk that we should use, and alias appropriately.
@@ -91,7 +98,7 @@ function gnusafe () {
             alias awk=gawk
         fi
         if [[ $HAS_GGREP -eq 0 || $HAS_GSED -eq 0 || $HAS_GAWK -eq 0 ]]; then
-            >&2 echo "${RED} 
+            >&2 echo -e "${RED} 
     --- ERROR: Non-Linux detected. Missing GNU sed, awk or grep ---
     The program could not find ggrep, gawk, or gsed as a fallback.
     Due to differences between BSD and GNU Utils the program will now exit
