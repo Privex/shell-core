@@ -18,8 +18,15 @@ SG_LIB_LOADED[colors]=1
 
 
 if [ -t 1 ]; then
-    BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
-    MAGENTA="$(tput setaf 5)" CYAN="$(tput setaf 6)" WHITE="$(tput setaf 7)" RESET="$(tput sgr0)"
+    if command -v tput &>/dev/null; then
+        BOLD="$(tput bold)" RED="$(tput setaf 1)" GREEN="$(tput setaf 2)" YELLOW="$(tput setaf 3)" BLUE="$(tput setaf 4)"
+        PURPLE="$(tput setaf 5)" MAGENTA="$(tput setaf 5)" CYAN="$(tput setaf 6)" WHITE="$(tput setaf 7)"
+        RESET="$(tput sgr0)" NORMAL="$(tput sgr0)"
+    else
+        BOLD='\033[1m' RED='\033[00;31m' GREEN='\033[00;32m' YELLOW='\033[00;33m' BLUE='\033[00;34m'
+        PURPLE='\033[00;35m' MAGENTA='\033[00;35m' CYAN='\033[00;36m' WHITE='\033[01;37m'
+        RESET='\033[0m' NORMAL='\033[0m'
+    fi
 else
     BOLD="" RED="" GREEN="" YELLOW="" BLUE=""
     MAGENTA="" CYAN="" WHITE="" RESET=""
@@ -40,11 +47,11 @@ fi
 #
 #####
 function msg () {
-    local _color="" _dt="" _msg=""
+    local _color="" _dt="" _msg="" _bold=""
     if [[ "$#" -eq 0 ]]; then echo ""; return; fi;
     [[ "$1" == "ts" ]] && shift && _dt="[$(date +'%Y-%m-%d %H:%M:%S %Z')] " || _dt=""
     if [[ "$#" -gt 1 ]] && [[ "$1" == "bold" ]]; then
-        echo -n "${BOLD}"
+        _bold="${BOLD}"
         shift
     fi
     (($#==1)) || _msg="${@:2}"
@@ -60,7 +67,7 @@ function msg () {
         * ) _msg="$1 ${_msg}";;
     esac
 
-    (($#==1)) && _msg="${_dt}$1" || _msg="${_color}${_dt}${_msg}"
+    (($#==1)) && _msg="${_dt}$1" || _msg="${_color}${_bold}${_dt}${_msg}"
     echo -e "$_msg${RESET}"
 }
 
@@ -80,7 +87,7 @@ if [[ $(ident_shell) == "bash" ]]; then
 elif [[ $(ident_shell) == "zsh" ]]; then
     export msg msgts >/dev/null
 else
-    >&2 echo "${RED}${BOLD}WARNING: Could not identify your shell. Attempting to export msg and msgts with plain export..."
+    >&2 echo -e "${RED}${BOLD}WARNING: Could not identify your shell. Attempting to export msg and msgts with plain export..."
     export msg msgts
 fi
 

@@ -9,7 +9,7 @@
 #                                                           #
 #############################################################
 
-S_CORE_VER="0.4.4"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
+S_CORE_VER="0.4.5"    # Used by sourcing scripts to identify the current version of Privex's Shell Core.
 
 
 ######
