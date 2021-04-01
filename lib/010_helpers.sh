@@ -295,13 +295,37 @@ split_assoc() {
     echo "$assoc_output"
 }
 
+# rm-extension [path]
+# Remove the last extension from a filename/path and output the individual filename
+# without the last extension
+#
+#     $ rm-extension /backups/mysql/2021-03-17.tar.lz4
+#     2021-03-17.tar
+#
+rm-extension() {
+    local fname=$(basename -- "$1")
+    echo "${fname%.*}"
+}
+
+# get-extension [path]
+# Extract the last extension from a filename/path and output it.
+#
+#     $ get-extension /backups/mysql/2021-03-17.tar.lz4
+#     lz4
+#
+get-extension() {
+    local fname=$(basename -- "$1")
+    echo "${fname##*.}"
+}
+
+
 if [[ $(ident_shell) == "bash" ]]; then
-    export -f sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
+    export -f sudo containsElement yesno pkg_not_found split_by split_assoc rm-extension get-extension >/dev/null
 elif [[ $(ident_shell) == "zsh" ]]; then
-    export sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
+    export sudo containsElement yesno pkg_not_found split_by split_assoc rm-extension get-extension >/dev/null
 else
     msgerr bold red "WARNING: Could not identify your shell. Attempting to export with plain export..."
-    export sudo containsElement yesno pkg_not_found split_by split_assoc >/dev/null
+    export sudo containsElement yesno pkg_not_found split_by split_assoc rm-extension get-extension >/dev/null
 fi
 
 

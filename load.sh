@@ -22,10 +22,10 @@ source "${DIR}/init.sh"
 ident_shell >/dev/null
 
 if [ -z ${SG_LOAD_LIBS+x} ]; then
-    SG_LOAD_LIBS=(gnusafe helpers)
-    _debug "SG_LOAD_LIBS not specified from environment. Using default libs: ${SG_LOAD_LIBS[@]}"
+    SG_LOAD_LIBS=(gnusafe helpers datehelpers)
+    _debug "SG_LOAD_LIBS not specified from environment. Using default libs: ${SG_LOAD_LIBS[*]}"
 else
-    _debug "SG_LOAD_LIBS was specified in environment. Using environment libs: ${SG_LOAD_LIBS[@]}"
+    _debug "SG_LOAD_LIBS was specified in environment. Using environment libs: ${SG_LOAD_LIBS[*]}"
 fi
 
 sg_load_lib "${SG_LOAD_LIBS[@]}"

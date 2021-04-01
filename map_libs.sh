@@ -47,7 +47,7 @@ if [ -z ${SG_LIB_LOADED[@]+x} ]; then
     SG_LIB_LOADED=(
         [colors]=0 [identify]=0 [permission]=0 [traplib]=0
         [logging]=0 [core_func]=1
-        [gnusafe]=0 [trap_helper]=0 [helpers]=0
+        [gnusafe]=0 [trap_helper]=0 [helpers]=0 [datehelpers]=0
     )
 fi
 if [ -z ${SG_LIBS[@]+x} ]; then
@@ -61,16 +61,16 @@ if [ -z ${SG_LIBS[@]+x} ]; then
         [logging]="${SG_DIR}/core/010_logging.sh" [permission]="${SG_DIR}/base/permission.sh"
         [traplib]="${SG_DIR}/base/trap.bash"
         [gnusafe]="${SG_DIR}/lib/000_gnusafe.sh" [trap_helper]="${SG_DIR}/lib/000_trap_helper.sh"
-        [helpers]="${SG_DIR}/lib/010_helpers.sh"
+        [helpers]="${SG_DIR}/lib/010_helpers.sh" [datehelpers]="${SG_DIR}/lib/020_date_helpers.sh"
     )
 fi
 
 sg_load_lib() {
-    (($#<1)) && { >&2 msgerr "[ERROR] sg_load_lib expects at least one argument!" && return 1; }
+    (( $# < 1 )) && { >&2 msgerr "[ERROR] sg_load_lib expects at least one argument!" && return 1; }
     local a
     for a in "$@"; do
         [[ "$a" == "trap" ]] && a="traplib"
-        if ((${SG_LIB_LOADED[$a]}<1)); then
+        if (( ${SG_LIB_LOADED[$a]} < 1 )); then
             _debug "[map_libs.sg_load_lib] Loading library '$a' from location '${SG_LIBS[$a]}' ..."
             source "${SG_LIBS[$a]}"
         else
